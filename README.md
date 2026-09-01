@@ -1,64 +1,88 @@
 # Admin Board
 
-Full-stack панель для работы с обращениями клиентов и командой поддержки.
+**Full-stack helpdesk dashboard for support teams.**
 
-Проект состоит из React-приложения и REST API. Данные хранятся в PostgreSQL. Есть авторизация, роли, дополнительные права пользователей, CRUD заявок, фильтры, аналитика и базовое тестирование.
+**Live Demo:** deployment configuration is ready — the real public URL is added after the first Render Blueprint deploy.
+**API Docs:** `/docs` on the deployed application.
 
-## Возможности
+**Portfolio demo account**
 
-- регистрация и вход в аккаунт;
-- роли `admin`, `manager`, `user`;
-- дополнительные права для отдельных пользователей;
-- создание, редактирование и удаление заявок;
-- поиск, фильтрация, сортировка и пагинация;
-- назначение исполнителя;
-- управление пользователями;
-- удаление аккаунтов администратором;
-- аналитика по статусам и приоритетам;
-- Swagger/OpenAPI для REST API;
-- unit-тесты для API и интерфейса;
-- Playwright e2e-тесты;
-- Docker Compose для PostgreSQL;
-- GitHub Actions для основных проверок.
+```text
+demo@adminboard.app
+PortfolioDemo!2026
+```
 
-## Стек
+![Admin Board tickets dashboard](docs/screenshots/tickets.png)
+
+Admin Board is a SaaS-style support workspace with authentication, server-side authorization, ticket CRUD, search and filters, analytics, user access management, PostgreSQL persistence and automated browser checks.
+
+## Product screens
+
+### Analytics
+
+Metrics are calculated from current PostgreSQL data through the REST API.
+
+![Admin Board analytics](docs/screenshots/analytics.png)
+
+### Users and permissions
+
+Roles provide a base access level and individual permissions can extend it. The backend reloads the current user for authenticated requests, so access changes are not trusted from stale JWT role data.
+
+![Admin Board users and permissions](docs/screenshots/users-permissions.png)
+
+## What the project demonstrates
+
+- authenticated React application with protected routes;
+- `admin`, `manager` and `user` roles;
+- granular per-user permissions enforced by Fastify;
+- ticket create, edit and delete flows;
+- optimistic ticket status updates;
+- server-side search, filtering, sorting and pagination;
+- PostgreSQL + Prisma migrations;
+- analytics based on database state;
+- Swagger / OpenAPI documentation;
+- responsive desktop and mobile UI;
+- explicit loading, error and empty states;
+- resettable public portfolio demo;
+- Vitest + React Testing Library;
+- Playwright browser E2E;
+- single-origin production deployment;
+- GitHub Actions with production smoke verification.
+
+## Stack
 
 ### Frontend
 
-- React
-- TypeScript
-- React Router
-- TanStack Query
-- React Hook Form
-- Zod
-- Recharts
-- Vite
-- Lucide React
+React, TypeScript, React Router, TanStack Query, React Hook Form, Zod, Recharts, Vite and Lucide React.
 
 ### Backend
 
-- Node.js
-- Fastify
-- TypeScript
-- PostgreSQL
-- Prisma
-- JWT
-- httpOnly cookies
-- Swagger / OpenAPI
+Node.js, Fastify, TypeScript, PostgreSQL, Prisma, JWT/httpOnly cookies and Swagger/OpenAPI.
 
-### Инструменты
+### Quality and delivery
 
-- Vitest
-- React Testing Library
-- Playwright
-- ESLint
-- Prettier
-- Docker Compose
-- GitHub Actions
+Vitest, React Testing Library, Playwright, ESLint, Prettier, Docker Compose and GitHub Actions.
 
-## Локальный запуск
+## Architecture
 
-Нужны Node.js 22+ и Docker.
+```mermaid
+flowchart LR
+  Browser[React + TypeScript] -->|same origin| API[Fastify REST API]
+  API --> Prisma[Prisma ORM]
+  Prisma --> DB[(PostgreSQL)]
+  API --> Swagger[Swagger / OpenAPI]
+  CI[GitHub Actions] --> Checks[Unit + build + production smoke + E2E]
+```
+
+Detailed notes: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+
+## Demo safety
+
+The public demo uses a dedicated database and public demo credentials. On successful demo login the workspace is restored to a known baseline. Visitors can try CRUD and permissions without permanently destroying the presentation dataset. Registration is disabled only in public demo mode.
+
+## Local development
+
+Requirements: Node.js 22+ and Docker/PostgreSQL.
 
 ```bash
 npm install
@@ -67,92 +91,33 @@ npm run setup
 npm run dev
 ```
 
-После запуска:
+Local URLs:
 
 - frontend: `http://localhost:5173`
 - API: `http://localhost:3001`
 - Swagger: `http://localhost:3001/docs`
 
-Если порт `3001` нужен именно для frontend:
+Local seed accounts remain separate from the production portfolio demo.
 
-```bash
-npm run dev:3001
-```
-
-В этом режиме:
-
-- frontend: `http://localhost:3001`
-- API: `http://localhost:3002`
-
-## Локальные аккаунты после seed
-
-Администратор:
-
-```text
-admin@mail.ru
-Admin123!
-```
-
-Менеджер:
-
-```text
-manager@mail.ru
-Admin123!
-```
-
-Эти данные предназначены только для локального запуска. Для реального окружения секреты и пароли должны задаваться отдельно.
-
-## Основные команды
+## Useful commands
 
 ```bash
 npm run dev
-npm run dev:3001
 npm run setup
 npm run build
 npm run lint
 npm run test
 npm run test:e2e
-npm run format
+npm run screenshots
 npm run format:check
-npm run check
-npm run db:generate
 npm run db:migrate
 npm run db:seed
 ```
 
-## Структура
+## Deployment
 
-```text
-apps/
-  api/        Fastify API, Prisma, PostgreSQL
-  web/        React application
-scripts/      локальные служебные скрипты
-.github/      CI
-docker-compose.yml
-```
+`render.yaml` defines the recommended single-origin deployment with an always-on Node web service, managed PostgreSQL, Prisma migrations before deploy, generated JWT secrets and check-gated automatic deployment.
 
-## Доступы
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
-Роль задаёт базовые возможности пользователя. Администратор также может выдать отдельные разрешения:
-
-- создание заявок;
-- редактирование заявок;
-- удаление заявок;
-- просмотр аналитики;
-- просмотр команды.
-
-Проверка прав выполняется на backend, поэтому ограничения не зависят только от интерфейса.
-
-## API
-
-Документация доступна после запуска API:
-
-```text
-http://localhost:3001/docs
-```
-
-Для режима `dev:3001` Swagger работает на:
-
-```text
-http://localhost:3002/docs
-```
+After Render creates the public URL, the final documentation commit should replace the deployment-ready note above with real **Live Demo** and **API Docs** links and use the same URL as the GitHub repository Homepage.
