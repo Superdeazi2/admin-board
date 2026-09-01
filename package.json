@@ -26,8 +26,7 @@
     "check": "npm run format:check && npm run lint && npm run test && npm run build",
     "docker:up": "docker compose up -d postgres",
     "docker:down": "docker compose down",
-    "start:prod": "npm --workspace @admin-board/api run start",
-    "screenshots": "node scripts/capture-readme-screenshots.mjs"
+    "start:prod": "npm --workspace @admin-board/api run start"
   },
   "engines": {
     "node": ">=20"
