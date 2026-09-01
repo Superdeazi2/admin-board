@@ -2,11 +2,18 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { BarChart3, ClipboardList, LogOut, Menu, Users, X } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../auth'
+import type { Permission } from '../api'
+import { hasUiPermission } from '../permissions'
 
-const nav = [
+const nav: Array<{
+  to: string
+  label: string
+  icon: typeof ClipboardList
+  permission?: Permission
+}> = [
   { to: '/tickets', label: 'Заявки', icon: ClipboardList },
-  { to: '/analytics', label: 'Статистика', icon: BarChart3 },
-  { to: '/users', label: 'Команда', icon: Users },
+  { to: '/analytics', label: 'Статистика', icon: BarChart3, permission: 'analytics.view' },
+  { to: '/users', label: 'Команда', icon: Users, permission: 'users.view' },
 ]
 
 const titles: Record<string, string> = {
@@ -19,6 +26,10 @@ export function Layout() {
   const { user, logout } = useAuth()
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  const visibleNav = nav.filter(
+    (item) => !item.permission || hasUiPermission(user, item.permission),
+  )
 
   return (
     <div className="app-shell">
@@ -39,7 +50,7 @@ export function Layout() {
         </div>
 
         <nav className="nav-list">
-          {nav.map(({ to, label, icon: Icon }) => (
+          {visibleNav.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}

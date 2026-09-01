@@ -1,5 +1,4 @@
 import type { Role } from '@prisma/client'
-import { prisma } from './prisma.js'
 
 export const permissionValues = [
   'tickets.create',
@@ -21,15 +20,9 @@ export function roleHasPermission(role: Role, permission: Permission) {
   return rolePermissions[role].includes(permission)
 }
 
-export async function hasPermission(user: { id: string; role: Role }, permission: Permission) {
-  if (roleHasPermission(user.role, permission)) {
-    return true
-  }
-
-  const stored = await prisma.user.findUnique({
-    where: { id: user.id },
-    select: { permissions: true },
-  })
-
-  return stored?.permissions.includes(permission) ?? false
+export function hasPermission(
+  user: { role: Role; permissions?: readonly string[] },
+  permission: Permission,
+) {
+  return roleHasPermission(user.role, permission) || user.permissions?.includes(permission) === true
 }

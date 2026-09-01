@@ -1,8 +1,10 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, type ReactNode } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
+import type { Permission } from './api'
 import { useAuth } from './auth'
 import { Layout } from './components/Layout'
 import { LoadingState } from './components/State'
+import { hasUiPermission } from './permissions'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 
@@ -26,11 +28,21 @@ function RouteFallback() {
 
 function Protected() {
   const { user, loading } = useAuth()
-
   if (loading) return <RouteFallback />
   if (!user) return <Navigate to="/login" replace />
-
   return <Layout />
+}
+
+function RequirePermission({
+  permission,
+  children,
+}: {
+  permission: Permission
+  children: ReactNode
+}) {
+  const { user } = useAuth()
+  if (!hasUiPermission(user, permission)) return <Navigate to="/tickets" replace />
+  return children
 }
 
 export default function App() {
@@ -41,8 +53,22 @@ export default function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route element={<Protected />}>
           <Route path="/tickets" element={<TicketsPage />} />
-          <Route path="/analytics" element={<AnalyticsPage />} />
-          <Route path="/users" element={<UsersPage />} />
+          <Route
+            path="/analytics"
+            element={
+              <RequirePermission permission="analytics.view">
+                <AnalyticsPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/users"
+            element={
+              <RequirePermission permission="users.view">
+                <UsersPage />
+              </RequirePermission>
+            }
+          />
         </Route>
         <Route path="*" element={<Navigate to="/tickets" replace />} />
       </Routes>

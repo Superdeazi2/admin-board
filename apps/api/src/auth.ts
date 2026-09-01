@@ -2,12 +2,14 @@ import crypto from 'node:crypto'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import bcrypt from 'bcryptjs'
 import { prisma } from './prisma.js'
+import { permissionValues, type Permission } from './permissions.js'
 
 export type SessionUser = {
   id: string
   name: string
   email: string
   role: 'admin' | 'manager' | 'user'
+  permissions: Permission[]
 }
 
 declare module '@fastify/jwt' {
@@ -20,20 +22,51 @@ declare module '@fastify/jwt' {
 const accessCookie = 'ab_access'
 const refreshCookie = 'ab_refresh'
 
+function normalizePermissions(values: string[]): Permission[] {
+  return values.filter((value): value is Permission =>
+    permissionValues.includes(value as Permission),
+  )
+}
+
+function secureCookie() {
+  return process.env.NODE_ENV === 'production'
+}
+
 export async function registerAuth(app: FastifyInstance) {
   app.decorate('authenticate', async (request: FastifyRequest, reply: FastifyReply) => {
+    const token = request.cookies[accessCookie]
+    if (!token) {
+      return reply.code(401).send({ message: 'Требуется авторизация' })
+    }
+
+    let decoded: SessionUser
     try {
-      const token = request.cookies[accessCookie]
-      if (!token) throw new Error('missing token')
-      request.user = app.jwt.verify(token) as SessionUser
+      decoded = app.jwt.verify(token) as SessionUser
     } catch {
       return reply.code(401).send({ message: 'Требуется авторизация' })
     }
+
+    const current = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        permissions: true,
+      },
+    })
+
+    if (!current) {
+      return reply.code(401).send({ message: 'Требуется авторизация' })
+    }
+
+    request.user = userPayload(current)
   })
 
   app.decorate('requireRole', (roles: SessionUser['role'][]) => {
     return async (request: FastifyRequest, reply: FastifyReply) => {
-      await (app as any).authenticate(request, reply)
+      await app.authenticate(request, reply)
       if (reply.sent) return
       if (!roles.includes(request.user.role)) {
         return reply.code(403).send({ message: 'Недостаточно прав' })
@@ -56,8 +89,15 @@ export function userPayload(user: {
   name: string
   email: string
   role: SessionUser['role']
+  permissions: string[]
 }): SessionUser {
-  return { id: user.id, name: user.name, email: user.email, role: user.role }
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    permissions: normalizePermissions(user.permissions),
+  }
 }
 
 export async function issueSession(app: FastifyInstance, reply: FastifyReply, user: SessionUser) {
@@ -77,12 +117,14 @@ export async function issueSession(app: FastifyInstance, reply: FastifyReply, us
     .setCookie(accessCookie, accessToken, {
       httpOnly: true,
       sameSite: 'lax',
+      secure: secureCookie(),
       path: '/',
       maxAge: 15 * 60,
     })
     .setCookie(refreshCookie, refreshId, {
       httpOnly: true,
       sameSite: 'lax',
+      secure: secureCookie(),
       path: '/api/auth',
       maxAge: 7 * 24 * 60 * 60,
     })
@@ -101,5 +143,15 @@ export function hashRefreshToken(token: string) {
 }
 
 export function clearSession(reply: FastifyReply) {
-  reply.clearCookie(accessCookie, { path: '/' }).clearCookie(refreshCookie, { path: '/api/auth' })
+  reply
+    .clearCookie(accessCookie, {
+      path: '/',
+      sameSite: 'lax',
+      secure: secureCookie(),
+    })
+    .clearCookie(refreshCookie, {
+      path: '/api/auth',
+      sameSite: 'lax',
+      secure: secureCookie(),
+    })
 }

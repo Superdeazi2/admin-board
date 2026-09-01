@@ -13,6 +13,7 @@ import { EmptyState, ErrorState, LoadingState } from '../components/State'
 import { TicketModal } from '../components/TicketModal'
 import { TicketFilters } from '../components/TicketFilters'
 import { useAuth } from '../auth'
+import { hasUiPermission } from '../permissions'
 
 const statusLabel: Record<TicketStatus, string> = {
   new: 'Новая',
@@ -92,7 +93,9 @@ export function TicketsPage() {
     },
   })
 
-  const canEdit = user?.role === 'admin' || user?.role === 'manager'
+  const canCreate = hasUiPermission(user, 'tickets.create')
+  const canEdit = hasUiPermission(user, 'tickets.edit')
+  const canDelete = hasUiPermission(user, 'tickets.delete')
 
   return (
     <div className="page-stack">
@@ -101,7 +104,7 @@ export function TicketsPage() {
           <h2>Очередь обращений</h2>
           <p>Поиск, фильтрация и управление заявками</p>
         </div>
-        {canEdit && (
+        {canCreate && (
           <button className="button primary" onClick={() => setCreating(true)}>
             <Plus size={17} />
             Новая заявка
@@ -205,7 +208,7 @@ export function TicketsPage() {
                       <Pencil size={16} />
                     </button>
                   )}
-                  {user?.role === 'admin' && (
+                  {canDelete && (
                     <button
                       className="icon-button danger"
                       onClick={() => {
@@ -226,6 +229,7 @@ export function TicketsPage() {
             <div>
               <button
                 className="icon-button"
+                aria-label="Предыдущая страница"
                 disabled={page <= 1}
                 onClick={() => setPage((p) => p - 1)}
               >
@@ -236,6 +240,7 @@ export function TicketsPage() {
               </span>
               <button
                 className="icon-button"
+                aria-label="Следующая страница"
                 disabled={page >= tickets.data.pages}
                 onClick={() => setPage((p) => p + 1)}
               >

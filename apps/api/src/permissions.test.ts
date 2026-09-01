@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { permissionValues, roleHasPermission } from './permissions.js'
+import { hasPermission, permissionValues, roleHasPermission } from './permissions.js'
 
 describe('role permission matrix', () => {
   it('gives administrators every declared permission', () => {
@@ -20,5 +20,11 @@ describe('role permission matrix', () => {
     for (const permission of permissionValues) {
       expect(roleHasPermission('user', permission)).toBe(false)
     }
+  })
+
+  it('adds explicit user permissions without changing the base role', () => {
+    const user = { role: 'user' as const, permissions: ['analytics.view'] }
+    expect(hasPermission(user, 'analytics.view')).toBe(true)
+    expect(hasPermission(user, 'tickets.delete')).toBe(false)
   })
 })

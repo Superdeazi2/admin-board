@@ -10,7 +10,7 @@ export type SessionUser = {
   name: string
   email: string
   role: Role
-  permissions?: Permission[]
+  permissions: Permission[]
 }
 
 export type AdminUser = SessionUser & {
