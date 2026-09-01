@@ -62,8 +62,85 @@ jobs:
       - name: Build
         run: npm run build
 
-  e2e:
+  production-smoke:
     needs: verify
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: adminboard
+          POSTGRES_PASSWORD: adminboard
+          POSTGRES_DB: adminboard
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U adminboard -d adminboard"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      NODE_ENV: production
+      DEMO_MODE: 'true'
+      VITE_PUBLIC_DEMO: 'true'
+      DATABASE_URL: postgresql://adminboard:adminboard@127.0.0.1:5432/adminboard?schema=public
+      JWT_ACCESS_SECRET: ci-access-secret-for-admin-board
+      JWT_REFRESH_SECRET: ci-refresh-secret-for-admin-board
+      CORS_ORIGIN: same-origin
+      PORT: 3001
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Prisma client
+        run: npm run db:generate
+
+      - name: Migrations
+        run: npm run db:migrate
+
+      - name: Build
+        run: npm run build
+
+      - name: Start production server
+        run: |
+          npm run start:prod > /tmp/admin-board.log 2>&1 &
+          echo $! > /tmp/admin-board.pid
+
+      - name: Wait for health
+        run: |
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:3001/health; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/admin-board.log
+          exit 1
+
+      - name: Verify single-origin app and API
+        run: |
+          curl -fsS -H 'Accept: text/html' http://127.0.0.1:3001/ | grep -q 'Admin Board'
+          curl -fsS http://127.0.0.1:3001/docs/ >/dev/null
+          curl -fsS -c /tmp/cookies.txt \
+            -H 'Content-Type: application/json' \
+            -d '{"email":"demo@adminboard.app","password":"PortfolioDemo!2026"}' \
+            http://127.0.0.1:3001/api/auth/login | grep -q 'demo@adminboard.app'
+          curl -fsS -b /tmp/cookies.txt \
+            'http://127.0.0.1:3001/api/tickets?page=1&pageSize=8&sort=updatedAt&order=desc' \
+            | grep -q '"items"'
+
+  e2e:
+    needs: [verify, production-smoke]
     runs-on: ubuntu-latest
 
     services:
@@ -102,7 +179,7 @@ jobs:
         run: npm ci
 
       - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps --only-shell chromium
 
       - name: Prisma client
         run: npm run db:generate
@@ -110,10 +187,7 @@ jobs:
       - name: Migrations
         run: npm run db:migrate
 
-      - name: Seed demo data
-        run: npm run db:seed
-
-      - name: Browser smoke tests
+      - name: Browser portfolio flows
         run: npm run test:e2e
 
       - name: Upload Playwright report
