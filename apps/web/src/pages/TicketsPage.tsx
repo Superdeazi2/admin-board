@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { ChevronLeft, ChevronRight, Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import {
   api,
@@ -11,6 +11,7 @@ import {
 import { queryClient } from '../queryClient'
 import { EmptyState, ErrorState, LoadingState } from '../components/State'
 import { TicketModal } from '../components/TicketModal'
+import { TicketFilters } from '../components/TicketFilters'
 import { useAuth } from '../auth'
 
 const statusLabel: Record<TicketStatus, string> = {
@@ -108,51 +109,25 @@ export function TicketsPage() {
         )}
       </section>
 
-      <section className="toolbar">
-        <div className="search-box">
-          <Search size={17} />
-          <input
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value)
-              setPage(1)
-            }}
-            placeholder="Поиск по заявкам и клиентам"
-          />
-        </div>
-        <select
-          value={status}
-          onChange={(e) => {
-            setStatus(e.target.value)
-            setPage(1)
-          }}
-        >
-          <option value="">Все статусы</option>
-          <option value="new">Новые</option>
-          <option value="work">В работе</option>
-          <option value="waiting">Ожидают</option>
-          <option value="closed">Закрытые</option>
-        </select>
-        <select
-          value={priority}
-          onChange={(e) => {
-            setPriority(e.target.value)
-            setPage(1)
-          }}
-        >
-          <option value="">Любой приоритет</option>
-          <option value="critical">Критический</option>
-          <option value="high">Высокий</option>
-          <option value="medium">Средний</option>
-          <option value="low">Низкий</option>
-        </select>
-        <select value={sort} onChange={(e) => setSort(e.target.value)}>
-          <option value="updatedAt">По обновлению</option>
-          <option value="createdAt">По созданию</option>
-          <option value="priority">По приоритету</option>
-          <option value="status">По статусу</option>
-        </select>
-      </section>
+      <TicketFilters
+        search={search}
+        status={status}
+        priority={priority}
+        sort={sort}
+        onSearchChange={(value) => {
+          setSearch(value)
+          setPage(1)
+        }}
+        onStatusChange={(value) => {
+          setStatus(value)
+          setPage(1)
+        }}
+        onPriorityChange={(value) => {
+          setPriority(value)
+          setPage(1)
+        }}
+        onSortChange={setSort}
+      />
 
       {tickets.isLoading && <LoadingState />}
       {tickets.isError && (
