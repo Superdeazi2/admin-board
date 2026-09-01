@@ -15,6 +15,8 @@ services:
         value: production
       - key: DEMO_MODE
         value: 'true'
+      - key: COOKIE_SECURE
+        value: 'true'
       - key: VITE_PUBLIC_DEMO
         value: 'true'
       - key: CORS_ORIGIN

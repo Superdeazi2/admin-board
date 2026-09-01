@@ -84,6 +84,7 @@ jobs:
     env:
       NODE_ENV: production
       DEMO_MODE: 'true'
+      COOKIE_SECURE: 'false'
       VITE_PUBLIC_DEMO: 'true'
       DATABASE_URL: postgresql://adminboard:adminboard@127.0.0.1:5432/adminboard?schema=public
       JWT_ACCESS_SECRET: ci-access-secret-for-admin-board
