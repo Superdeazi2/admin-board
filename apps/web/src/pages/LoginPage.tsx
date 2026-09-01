@@ -12,6 +12,12 @@ const schema = z.object({
 
 type Form = z.infer<typeof schema>
 
+const publicDemo = import.meta.env.VITE_PUBLIC_DEMO === 'true'
+
+const credentials = publicDemo
+  ? { email: 'demo@adminboard.app', password: 'PortfolioDemo!2026' }
+  : { email: 'admin@mail.ru', password: 'Admin123!' }
+
 export function LoginPage() {
   const { user, login } = useAuth()
   const [error, setError] = useState('')
@@ -21,7 +27,7 @@ export function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<Form>({
     resolver: zodResolver(schema),
-    defaultValues: { email: 'admin@mail.ru', password: 'Admin123!' },
+    defaultValues: credentials,
   })
 
   if (user) return <Navigate to="/tickets" replace />
@@ -61,13 +67,17 @@ export function LoginPage() {
           </button>
         </form>
 
-        <div className="auth-switch">
-          Нет аккаунта? <Link to="/register">Создать</Link>
-        </div>
+        {!publicDemo && (
+          <div className="auth-switch">
+            Нет аккаунта? <Link to="/register">Создать</Link>
+          </div>
+        )}
 
         <div className="demo-note">
-          <span>Demo</span>
-          <code>admin@mail.ru / Admin123!</code>
+          <span>{publicDemo ? 'Portfolio demo' : 'Local seed'}</span>
+          <code>
+            {credentials.email} / {credentials.password}
+          </code>
         </div>
       </section>
     </main>

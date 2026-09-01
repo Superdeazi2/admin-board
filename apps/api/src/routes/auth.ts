@@ -9,6 +9,8 @@ import {
   userPayload,
   verifyPassword,
 } from '../auth.js'
+import { DEMO_EMAIL, DEMO_PASSWORD, resetDemoWorkspace } from '../demo.js'
+import { env } from '../env.js'
 import { prisma } from '../prisma.js'
 
 const loginSchema = z.object({
@@ -29,6 +31,10 @@ export async function authRoutes(app: FastifyInstance) {
       schema: { tags: ['Auth'], summary: 'Create account' },
     },
     async (request, reply) => {
+      if (env.DEMO_MODE) {
+        return reply.code(403).send({ message: 'Регистрация отключена в публичном демо' })
+      }
+
       const parsed = registerSchema.safeParse(request.body)
       if (!parsed.success) {
         return reply.code(400).send({ message: 'Проверьте данные регистрации' })
@@ -68,8 +74,18 @@ export async function authRoutes(app: FastifyInstance) {
         return reply.code(400).send({ message: 'Проверьте email и пароль' })
       }
 
+      const email = parsed.data.email.toLowerCase()
+
+      if (env.DEMO_MODE) {
+        if (email !== DEMO_EMAIL || parsed.data.password !== DEMO_PASSWORD) {
+          return reply.code(401).send({ message: 'Используйте demo-аккаунт из README' })
+        }
+
+        await resetDemoWorkspace()
+      }
+
       const user = await prisma.user.findUnique({
-        where: { email: parsed.data.email.toLowerCase() },
+        where: { email },
       })
 
       if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash))) {
