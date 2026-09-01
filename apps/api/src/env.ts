@@ -20,6 +20,15 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
   PORT: z.coerce.number().default(3001),
   DEMO_MODE: booleanString,
+  COOKIE_SECURE: z.enum(['true', 'false']).optional(),
 })
 
-export const env = envSchema.parse(process.env)
+const parsed = envSchema.parse(process.env)
+
+export const env = {
+  ...parsed,
+  COOKIE_SECURE:
+    parsed.COOKIE_SECURE === undefined
+      ? parsed.NODE_ENV === 'production'
+      : parsed.COOKIE_SECURE === 'true',
+}

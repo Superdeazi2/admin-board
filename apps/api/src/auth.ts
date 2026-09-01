@@ -2,6 +2,7 @@ import crypto from 'node:crypto'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import bcrypt from 'bcryptjs'
 import { prisma } from './prisma.js'
+import { env } from './env.js'
 import { permissionValues, type Permission } from './permissions.js'
 
 export type SessionUser = {
@@ -29,7 +30,7 @@ function normalizePermissions(values: string[]): Permission[] {
 }
 
 function secureCookie() {
-  return process.env.NODE_ENV === 'production'
+  return env.COOKIE_SECURE
 }
 
 export async function registerAuth(app: FastifyInstance) {
