@@ -1,32 +1,40 @@
 {
   "name": "admin-board",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "version": "1.0.0",
+  "workspaces": [
+    "apps/web",
+    "apps/api"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "dev:web": "npm --workspace @admin-board/web run dev",
+    "dev:api": "npm --workspace @admin-board/api run dev",
+    "build": "npm --workspace @admin-board/api run build && npm --workspace @admin-board/web run build",
+    "lint": "npm --workspace @admin-board/api run lint && npm --workspace @admin-board/web run lint",
+    "test": "npm --workspace @admin-board/api run test && npm --workspace @admin-board/web run test",
+    "test:e2e": "npm --workspace @admin-board/web run test:e2e",
+    "db:generate": "npm --workspace @admin-board/api run db:generate",
+    "db:migrate": "npm --workspace @admin-board/api run db:migrate",
+    "db:seed": "npm --workspace @admin-board/api run db:seed",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "dev": "concurrently -k -n API,WEB -c auto \"PORT=3001 CORS_ORIGIN=http://localhost:5173 npm run dev:api\" \"VITE_API_URL=http://localhost:3001 npm run dev:web\"",
+    "dev:3001": "concurrently -k -n API,WEB -c auto \"PORT=3002 CORS_ORIGIN=http://localhost:3001 npm run dev:api\" \"VITE_API_URL=http://localhost:3002 npm --workspace @admin-board/web run dev -- --port 3001 --host 0.0.0.0\"",
+    "setup": "node scripts/prepare-dev.mjs",
+    "dev:setup": "npm run setup && npm run dev",
+    "dev:3001:setup": "npm run setup && npm run dev:3001",
+    "check": "npm run format:check && npm run lint && npm run test && npm run build",
+    "docker:up": "docker compose up -d postgres",
+    "docker:down": "docker compose down"
   },
-  "dependencies": {
-    "@tailwindcss/vite": "^4.3.0",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
-    "tailwindcss": "^4.3.0"
+  "engines": {
+    "node": ">=20"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@types/node": "^24.12.3",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
-    "eslint": "^10.3.0",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
-    "globals": "^17.6.0",
-    "typescript": "~6.0.2",
-    "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12"
+    "prettier": "^3.5.3",
+    "concurrently": "^9.2.1"
+  },
+  "overrides": {
+    "deepmerge-ts": "8.0.0"
   }
 }
