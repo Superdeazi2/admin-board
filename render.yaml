@@ -5,8 +5,18 @@ services:
     plan: free
     region: frankfurt
     branch: main
-    buildCommand: npm ci && npm run db:generate && npm run build
-    startCommand: npm run db:migrate && npm run start:prod
+    buildCommand: >-
+      npm ci &&
+      export DATABASE_URL="${ROOMLINE_DATABASE_URL}?schema=admin_board" &&
+      npm run db:generate &&
+      npm run build
+    startCommand: >-
+      export DATABASE_URL="${ROOMLINE_DATABASE_URL}" &&
+      printf 'CREATE SCHEMA IF NOT EXISTS "admin_board";' |
+      node scripts/prisma-cli.mjs db execute --stdin --schema prisma/schema.prisma &&
+      export DATABASE_URL="${ROOMLINE_DATABASE_URL}?schema=admin_board" &&
+      npm run db:migrate &&
+      npm run start:prod
     healthCheckPath: /health
     autoDeployTrigger: commit
     envVars:
@@ -24,15 +34,7 @@ services:
         generateValue: true
       - key: JWT_REFRESH_SECRET
         generateValue: true
-      - key: DATABASE_URL
+      - key: ROOMLINE_DATABASE_URL
         fromDatabase:
-          name: deazi-admin-board-db
+          name: roomline-deazi-db
           property: connectionString
-
-databases:
-  - name: deazi-admin-board-db
-    plan: free
-    region: frankfurt
-    postgresMajorVersion: '18'
-    databaseName: adminboard
-    user: adminboard
