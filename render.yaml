@@ -6,8 +6,8 @@ services:
     region: frankfurt
     branch: main
     buildCommand: >-
-      npm ci &&
       export DATABASE_URL="${ROOMLINE_DATABASE_URL}?schema=admin_board" &&
+      npm ci &&
       npm run db:generate &&
       npm run build
     startCommand: >-
@@ -20,6 +20,10 @@ services:
     healthCheckPath: /health
     autoDeployTrigger: commit
     envVars:
+      - key: NODE_VERSION
+        value: '22.23.2'
+      - key: SKIP_INSTALL_DEPS
+        value: 'true'
       - key: NODE_ENV
         value: production
       - key: DEMO_MODE
