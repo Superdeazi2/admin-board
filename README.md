@@ -2,9 +2,18 @@
 
 Fullstack-панель для работы с обращениями клиентов и командой поддержки.
 
-[GitHub](https://github.com/Superdeazi2/admin-board) · [GitLab](https://gitlab.com/Deazi/admin-board)
+[Live Demo](https://deazi-admin-board-demo.onrender.com/) · [GitHub](https://github.com/Superdeazi2/admin-board) · [GitLab](https://gitlab.com/Deazi/admin-board)
 
 ![Заявки](docs/screenshots/tickets.png)
+
+## Public demo
+
+Публичная версия работает в безопасном demo-режиме. При каждом входе тестовые данные восстанавливаются.
+
+```text
+demo@adminboard.app
+PortfolioDemo!2026
+```
 
 ## Что реализовано
 

@@ -63,7 +63,7 @@ export function LoginPage() {
           </label>
           {error && <div className="inline-error">{error}</div>}
           <button className="button primary full-button" disabled={isSubmitting}>
-            Войти
+            {publicDemo ? 'Открыть демо' : 'Войти'}
           </button>
         </form>
 
